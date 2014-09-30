@@ -73,6 +73,18 @@ class PkpCli(cmd.Cmd):
         """
         raise NotImplementedError
 
+    def do_cd(self, line)
+        """
+        Moves throught groups
+        """
+        raise NotImplementedError
+
+    def do_pwd(self, line)
+        """
+        Prints full "path"
+        """
+        raise NotImplementedError
+
     def do_show(self, line):
         """
         Show an entry
