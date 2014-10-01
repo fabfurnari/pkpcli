@@ -93,14 +93,7 @@ class PkpCli(cmd.Cmd):
         finally:
             self.db = None
 
-    def _print_group(self, group, level=0):        
-        # level = 1
-        # indent = " " * level
-        # print '%s%s' % (indent, group.title)
-        # for entry in group.entries:
-        #     print '%s -%s' % (indent, entry.title)
-        # for child in group.children:
-        #     self._print_group(child, level+1)
+    def _print_group(self, group, level=0):
         pass
 
     def complete_open(self, text, line, begidx, endidx):
@@ -174,25 +167,25 @@ class PkpCli(cmd.Cmd):
 
     def complete_cd(self, text, line, begidx, endidx):
         return [e.title for e in self.cwd.children if
-                e.title.startswith(text)]
-        
+                e.title.lower().startswith(text.lower())]
+
+    @db_opened
     def do_cd(self, line):
         """
         Moves throught groups
         """
         if line == '..':
             self.cwd = self.cwd.parent
-            # maybe on day a better autocomplete...
+            # maybe one day a better autocomplete...
         else:    
             l = dict([(e.title, e) for e in self.cwd.children])
             if line in l.keys():
                 self.cwd = l[line]
-
+        
         if self.cwd.title == 'Root Group':
             self.prompt = "/> "
         else:
             self.prompt = "{}> ".format(self.cwd.title)
-        
     
     def do_find(self, line):
         """
@@ -200,11 +193,20 @@ class PkpCli(cmd.Cmd):
         """
         raise NotImplementedError
 
+    @db_opened
     def do_pwd(self, line):
         """
         Prints full "path"
         """
-        print self.cwd.title
+        prompt_list = []
+        def _pwd(group):
+            prompt_list.insert(0,group)
+            if group.title == 'Root Group':
+                return prompt_list
+            else:
+                return _pwd(group.parent)
+        p = "/".join([x.title for x in _pwd(self.cwd)])
+        print p
 
     def do_show(self, line):
         """
