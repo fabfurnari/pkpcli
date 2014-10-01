@@ -73,6 +73,7 @@ class PkpCli(cmd.Cmd):
             sys.exit(1)
                 
         print "Working with DB file %s " % path
+        self.prompt = '/> '
         self.cwd = db.root
         return db
 
@@ -86,6 +87,7 @@ class PkpCli(cmd.Cmd):
         try:
             print "Closing db %s" % self.db.filepath
             self.db.close()
+            self.prompt = '>> '
         except Exception, e:
             print "Cannot close db %s: %s" % (self.db.filepath, e)
         finally:
@@ -169,12 +171,28 @@ class PkpCli(cmd.Cmd):
             print "  + {}".format(child.title)
         for entry in group.entries:
             print "  - {}".format(entry.title)
+
+    def complete_cd(self, text, line, begidx, endidx):
+        return [e.title for e in self.cwd.children if
+                e.title.startswith(text)]
         
     def do_cd(self, line):
         """
         Moves throught groups
         """
-        raise NotImplementedError
+        if line == '..':
+            self.cwd = self.cwd.parent
+            # maybe on day a better autocomplete...
+        else:    
+            l = dict([(e.title, e) for e in self.cwd.children])
+            if line in l.keys():
+                self.cwd = l[line]
+
+        if self.cwd.title == 'Root Group':
+            self.prompt = "/> "
+        else:
+            self.prompt = "{}> ".format(self.cwd.title)
+        
     
     def do_find(self, line):
         """
