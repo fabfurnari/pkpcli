@@ -11,7 +11,7 @@ import os
 from functools import wraps
 import keepassdb
 from keepassdb import LockingDatabase
-        
+
 class PkpCli(cmd.Cmd):
     """
     TODO
@@ -28,6 +28,7 @@ class PkpCli(cmd.Cmd):
         if self.db_path:
             # TODO: key file
             self.db = self._open_db(db_path,db_key)
+        keepassdb.model.RootGroup.title = '/'
         self._set_prompt()
 
     def db_opened(f):
@@ -100,11 +101,25 @@ class PkpCli(cmd.Cmd):
         if not self.db:
             self.prompt = '>> '
             return
-        if self.cwd.title == 'Root Group':
-            self.prompt = "/> "
         else:
             self.prompt = "{}> ".format(self.cwd.title)
         return
+
+    def _build_struct(self, what=None):
+        """
+        Builds a dict containing entries and group from
+        self.cwd that can be used by all other functions 
+        """
+        d = dict()
+        # orrible
+        if what == 'entries':
+            d = dict([(e.title, e) for e in self.cwd.entries])
+        elif what == 'groups':
+            d = dict([(g.title, g) for g in self.cwd.children])
+        else:
+            d['entries'] = dict([(e.title, e) for e in self.cwd.entries])
+            d['groups'] = dict([(g.title, g) for g in self.cwd.children])            
+        return d
 
     def complete_open(self, text, line, begidx, endidx):
         """
@@ -165,14 +180,16 @@ class PkpCli(cmd.Cmd):
         Shamelessly copied from official doc
         TODO: list not only cwd
         """
-        group = self.cwd
-        #print " + {}".format(group.title)
-        for child in group.children:
-            print " {}/".format(child.title)
-        for entry in group.entries:
-            print " {}".format(entry.title)
+        l = self._build_struct()
+        for key in l['groups']:
+            print "\033[1;36m{}/\033[1;m".format(key)
+        for key in l['entries']:
+            print "{}".format(key)
 
     def complete_cd(self, text, line, begidx, endidx):
+        """
+        TODO: use _build_struct() instead
+        """
         return [g.title for g in self.cwd.children if
                 g.title.lower().startswith(text.lower())]
 
@@ -184,10 +201,10 @@ class PkpCli(cmd.Cmd):
         if not line or line == '/': 
             self.cwd = self.db.root
         elif line == '..':
-            if self.cwd.title != 'Root Group':
+            if self.cwd.title != '/':
                 self.cwd = self.cwd.parent
-        else:    
-            l = dict([(e.title, e) for e in self.cwd.children])
+        else:
+            l = self._build_struct('groups')
             if line in l.keys():
                 self.cwd = l[line]
     
@@ -204,19 +221,41 @@ class PkpCli(cmd.Cmd):
         """
         prompt_list = []
         def _pwd(group):
-            prompt_list.insert(0,group)
-            if group.title == 'Root Group':
+            prompt_list.insert(0, group)
+            if group.title == '/':
                 return prompt_list
             else:
                 return _pwd(group.parent)
         p = "/".join([x.title for x in _pwd(self.cwd)])
         print p
 
+    def complete_show(self, text, line, begidx, endidx):
+        return [e.title for e in self.cwd.entries if
+                e.title.lower().startswith(text.lower())]
+    
     def do_show(self, line):
         """
         Show an entry
+        TODO: mask password
         """
-        raise NotImplementedError
+        if not line:
+            return
+        l = self._build_struct('entries')
+        if line in l.keys():
+            e = l[line]
+            print '''
+ {title}
+            
+ Group: {group}
+ User: {username}
+ URL: {url}
+ Password: {password}
+            
+ '''.format(title=e.title,
+            group=e.group.title,
+            username=e.username,
+            url=e.url,
+            password=e.password)
 
     def do_cpu(self, line):
         """
