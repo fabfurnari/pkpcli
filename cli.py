@@ -18,7 +18,6 @@ class PkpCli(cmd.Cmd):
     """
     def __init__(self, db_path=None, db_key=None):
         cmd.Cmd.__init__(self)
-        self.prompt = '>> '
         self.intro = 'Simple KeePass db shell'
         self.ruler = '-'
 
@@ -29,6 +28,7 @@ class PkpCli(cmd.Cmd):
         if self.db_path:
             # TODO: key file
             self.db = self._open_db(db_path,db_key)
+        self._set_prompt()
 
     def db_opened(f):
         """
@@ -74,7 +74,6 @@ class PkpCli(cmd.Cmd):
                 
         print "Working with DB file %s " % path
         self.cwd = db.root
-        self._set_prompt()
         return db
 
     def _close_db(self):
@@ -94,6 +93,10 @@ class PkpCli(cmd.Cmd):
             self.db = None
 
     def _set_prompt(self):
+        """
+        Simply set the prompt using the cwd
+        Or sets a standard prompt if db not opened
+        """
         if not self.db:
             self.prompt = '>> '
             return
