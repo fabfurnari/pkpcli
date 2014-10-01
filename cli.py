@@ -184,7 +184,9 @@ class PkpCli(cmd.Cmd):
         """
         Moves throught groups
         """
-        if line == '..':
+        if not line or line == '/': 
+            self.cwd = self.db.root
+        elif line == '..':
             if self.cwd.title != 'Root Group':
                 self.cwd = self.cwd.parent
                 # maybe one day a better autocomplete...
