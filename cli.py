@@ -73,8 +73,8 @@ class PkpCli(cmd.Cmd):
             sys.exit(1)
                 
         print "Working with DB file %s " % path
-        self.prompt = '/> '
         self.cwd = db.root
+        self._set_prompt()
         return db
 
     def _close_db(self):
@@ -87,14 +87,21 @@ class PkpCli(cmd.Cmd):
         try:
             print "Closing db %s" % self.db.filepath
             self.db.close()
-            self.prompt = '>> '
+            self.cwd = None
         except Exception, e:
             print "Cannot close db %s: %s" % (self.db.filepath, e)
         finally:
             self.db = None
 
-    def _print_group(self, group, level=0):
-        pass
+    def _set_prompt(self):
+        if not self.db:
+            self.prompt = '>> '
+            return
+        if self.cwd.title == 'Root Group':
+            self.prompt = "/> "
+        else:
+            self.prompt = "{}> ".format(self.cwd.title)
+        return
 
     def complete_open(self, text, line, begidx, endidx):
         """
@@ -175,17 +182,13 @@ class PkpCli(cmd.Cmd):
         Moves throught groups
         """
         if line == '..':
-            self.cwd = self.cwd.parent
-            # maybe one day a better autocomplete...
+            if self.cwd.title != 'Root Group':
+                self.cwd = self.cwd.parent
+                # maybe one day a better autocomplete...
         else:    
             l = dict([(e.title, e) for e in self.cwd.children])
             if line in l.keys():
                 self.cwd = l[line]
-        
-        if self.cwd.title == 'Root Group':
-            self.prompt = "/> "
-        else:
-            self.prompt = "{}> ".format(self.cwd.title)
     
     def do_find(self, line):
         """
@@ -237,7 +240,13 @@ class PkpCli(cmd.Cmd):
         To avoid the repeat-last-command behavior
         """
         pass
-        
+
+    def postcmd(self, stop, line):
+        """
+        Override to simplify the prompt string creation
+        """
+        self._set_prompt()
+        return cmd.Cmd.postcmd(self, stop, line)
 
 if __name__ == '__main__':
 
@@ -247,8 +256,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     c = PkpCli(db_path=args.database, db_key=args.keyfile)
-
-    try: # Just for debug
+    try:
         c.cmdloop()
     finally:
         c._close_db()
