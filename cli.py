@@ -159,17 +159,13 @@ class PkpCli(cmd.Cmd):
         self._close_db()
 
     @db_opened
-    def do_ls(self, line=None):
+    def do_ls(self, line):
         """
         List content of the current group
         Shamelessly copied from official doc
         """
-        if not line:
-            group = self.cwd
-        else:
-            group = line
-
-        print " + {}".format(group.title)
+        group = self.cwd
+        #print " + {}".format(group.title)
         for child in group.children:
             print "  + {}".format(child.title)
         for entry in group.entries:
