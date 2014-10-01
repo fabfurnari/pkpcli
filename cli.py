@@ -80,13 +80,16 @@ class PkpCli(cmd.Cmd):
         """
         Helper function to close the DB
         """
+        if not self.db:
+            return True
         try:
-            print "Closing db..."
+            print "Closing db %s" % self.db.filepath
             self.db.close()
         except Exception, e:
-            print "Cannot close db: %s" % e
+            print "Cannot close db %s : %s" % (self.db.filepath, e)
         finally:
             self.db.release_lock(force=True)
+            self.db = None
 
     def _print_group(self, group, level=0):
         """
@@ -132,23 +135,23 @@ class PkpCli(cmd.Cmd):
         NOTE: encrypt memory (if possible)
         TODO: Autocomplete should work....
         """
-        if not self.db:
-            self.db = self._open_db(path=line)
-        
-        print "Database %s opened" % line
+        self.db = self._open_db(path=line)
         
     def do_save(self, line):
         """
-        Save a new (or existing) kbd file
+        Save a new (or existing) db
         """
-        raise NotImplementedError
+        try:
+            self.db.save()
+        except Exception, e:
+            print "Cannot save db: %s" % e
 
     def do_close(self, line):
         """
-        Close a kbd file
-        NOTE: warns if not saved 
+        Close the current DB
+        TODO: warns if not saved 
         """
-        raise NotImplementedError
+        self._close_db()
 
     @db_opened
     def do_ls(self, line=None):
@@ -202,6 +205,13 @@ class PkpCli(cmd.Cmd):
         """
         self._close_db()
         return True
+
+    def emptyline(self):
+        """
+        To avoid the repeat-last-command behavior
+        """
+        pass
+        
 
 if __name__ == '__main__':
 
