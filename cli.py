@@ -79,16 +79,16 @@ class PkpCli(cmd.Cmd):
     def _close_db(self):
         """
         Helper function to close the DB
+        TODO: check if saved
         """
         if not self.db:
-            return True
+            return
         try:
             print "Closing db %s" % self.db.filepath
             self.db.close()
         except Exception, e:
-            print "Cannot close db %s : %s" % (self.db.filepath, e)
+            print "Cannot close db %s: %s" % (self.db.filepath, e)
         finally:
-            self.db.release_lock(force=True)
             self.db = None
 
     def _print_group(self, group, level=0):
@@ -136,7 +136,8 @@ class PkpCli(cmd.Cmd):
         TODO: Autocomplete should work....
         """
         self.db = self._open_db(path=line)
-        
+
+    @db_opened
     def do_save(self, line):
         """
         Save a new (or existing) db
@@ -146,6 +147,7 @@ class PkpCli(cmd.Cmd):
         except Exception, e:
             print "Cannot save db: %s" % e
 
+    @db_opened
     def do_close(self, line):
         """
         Close the current DB
@@ -163,7 +165,6 @@ class PkpCli(cmd.Cmd):
         
         self._print_group(line)
         
-
     def do_cd(self, line):
         """
         Moves throught groups
@@ -198,12 +199,12 @@ class PkpCli(cmd.Cmd):
         """
         Copy password into the clipboard
         """
-
+        
     def do_EOF(self, line):
         """
         Exits
         """
-        self._close_db()
+        self._close_db
         return True
 
     def emptyline(self):
