@@ -168,13 +168,13 @@ class PkpCli(cmd.Cmd):
         group = self.cwd
         #print " + {}".format(group.title)
         for child in group.children:
-            print "  + {}".format(child.title)
+            print " {}/".format(child.title)
         for entry in group.entries:
-            print "  - {}".format(entry.title)
+            print " {}".format(entry.title)
 
     def complete_cd(self, text, line, begidx, endidx):
-        return [e.title for e in self.cwd.children if
-                e.title.lower().startswith(text.lower())]
+        return [g.title for g in self.cwd.children if
+                g.title.lower().startswith(text.lower())]
 
     @db_opened
     def do_cd(self, line):
@@ -186,7 +186,6 @@ class PkpCli(cmd.Cmd):
         elif line == '..':
             if self.cwd.title != 'Root Group':
                 self.cwd = self.cwd.parent
-                # maybe one day a better autocomplete...
         else:    
             l = dict([(e.title, e) for e in self.cwd.children])
             if line in l.keys():
