@@ -91,17 +91,15 @@ class PkpCli(cmd.Cmd):
         finally:
             self.db = None
 
-    def _print_group(self, group, level=0):
-        """
-        Shamelessly copied from official doc
-        """
-        level = 1
-        indent = " " * level
-        print '%s%s' % (indent, group.title)
-        for entry in group.entries:
-            print '%s -%s' % (indent, entry.title)
-        for child in group.children:
-            self._print_group(child, level+1)
+    def _print_group(self, group, level=0):        
+        # level = 1
+        # indent = " " * level
+        # print '%s%s' % (indent, group.title)
+        # for entry in group.entries:
+        #     print '%s -%s' % (indent, entry.title)
+        # for child in group.children:
+        #     self._print_group(child, level+1)
+        pass
 
     def complete_open(self, text, line, begidx, endidx):
         """
@@ -159,11 +157,18 @@ class PkpCli(cmd.Cmd):
     def do_ls(self, line=None):
         """
         List content of the current group
+        Shamelessly copied from official doc
         """
         if not line:
-            line = self.current_wd
-        
-        self._print_group(line)
+            group = self.current_wd
+        else:
+            group = line
+
+        print " + {}".format(group.title)
+        for child in group.children:
+            print "  + {}".format(child.title)
+        for entry in group.entries:
+            print "  - {}".format(entry.title)
         
     def do_cd(self, line):
         """
