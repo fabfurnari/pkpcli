@@ -73,7 +73,7 @@ class PkpCli(cmd.Cmd):
             sys.exit(1)
                 
         print "Working with DB file %s " % path
-        self.current_wd = db.root
+        self.cwd = db.root
         return db
 
     def _close_db(self):
@@ -160,7 +160,7 @@ class PkpCli(cmd.Cmd):
         Shamelessly copied from official doc
         """
         if not line:
-            group = self.current_wd
+            group = self.cwd
         else:
             group = line
 
@@ -186,7 +186,7 @@ class PkpCli(cmd.Cmd):
         """
         Prints full "path"
         """
-        raise NotImplementedError
+        print self.cwd.title
 
     def do_show(self, line):
         """
