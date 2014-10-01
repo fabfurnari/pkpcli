@@ -163,6 +163,7 @@ class PkpCli(cmd.Cmd):
         """
         List content of the current group
         Shamelessly copied from official doc
+        TODO: list not only cwd
         """
         group = self.cwd
         #print " + {}".format(group.title)
