@@ -298,13 +298,19 @@ class PkpCli(cmd.Cmd):
             accessed=e.accessed,
      )
 
+    def complete_cpu(self, text, line, begidx, endidx):
+        """
+        TODO: find a way to merge with complete_show()
+        """
+        return [e.title for e in self.cwd.entries if
+                e.title.lower().startswith(text.lower())]            
 
     def do_cpu(self, line):
         """
         Copy username into the clipboard
         """
         raise NotImplementedError
-
+    
     def do_cpp(self, line):
         """
         Copy password into the clipboard
