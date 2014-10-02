@@ -233,6 +233,7 @@ class PkpCli(cmd.Cmd):
         return [e.title for e in self.cwd.entries if
                 e.title.lower().startswith(text.lower())]
     
+    @db_opened
     def do_show(self, line):
         """
         Show an entry
@@ -262,6 +263,7 @@ class PkpCli(cmd.Cmd):
         return [e.title for e in self.cwd.entries if
                 e.title.lower().startswith(text.lower())]
 
+    @db_opened
     def do_showall(self, line):
         """
         Show all entry
@@ -307,6 +309,35 @@ class PkpCli(cmd.Cmd):
         """
         Copy password into the clipboard
         """
+    def do_edit(self, line):
+        """
+        Edit an existing entry
+        """
+        raise NotImplementedError
+
+    def do_new(self, line):
+        """
+        Creates new entry
+        """
+        raise NotImplementedError
+
+    def do_mkdir(self, line):
+        """
+        Creates new group
+        """
+        raise NotImplementedError
+
+    def do_rm(self, line):
+        """
+        Delete an entry
+        """
+        raise NotImplementedError
+
+    def do_rmgroup(self, line):
+        """
+        Delete a group
+        """
+        raise NotImplementedError
         
     def do_EOF(self, line):
         """
