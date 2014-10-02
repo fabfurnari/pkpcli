@@ -244,18 +244,58 @@ class PkpCli(cmd.Cmd):
         if line in l.keys():
             e = l[line]
             print '''
- {title}
-            
- Group: {group}
- User: {username}
+ {group}/{title}
+
  URL: {url}
+ User: {username}
+ Password: *******
+            
+ '''.format(title=e.title,
+            group=e.group.title,
+            username=e.username,
+            url=e.url)
+
+    def complete_showall(self, text, line, begidx, endidx):
+        """
+        TODO: find a way to merge with complete_show()
+        """
+        return [e.title for e in self.cwd.entries if
+                e.title.lower().startswith(text.lower())]
+
+    def do_showall(self, line):
+        """
+        Show all entry
+        """
+        if not line:
+            return
+        l = self._build_struct('entries')
+        if line in l.keys():
+            e = l[line]
+            print '''
+ {group}/{title}
+
+ URL: {url}
+ User: {username}
  Password: {password}
+ Notes: {notes}
+ Expires on: {expires}
+
+ Created: {created}
+ Modified: {modified}
+ Accessed: {accessed}
             
  '''.format(title=e.title,
             group=e.group.title,
             username=e.username,
             url=e.url,
-            password=e.password)
+            password=e.password,
+            notes=e.notes,
+            expires=e.expires,
+            created=e.created,
+            modified=e.modified,
+            accessed=e.accessed,
+     )
+
 
     def do_cpu(self, line):
         """
@@ -287,6 +327,12 @@ class PkpCli(cmd.Cmd):
         """
         self._set_prompt()
         return cmd.Cmd.postcmd(self, stop, line)
+
+    def default(self, line):
+        cmd, arg, line = self.parseline(line)
+        func = [getattr(self, n) for n in self.get_names() if n.startswith('do_' + cmd)]
+        if func:
+            func[0](arg)
 
 if __name__ == '__main__':
 
