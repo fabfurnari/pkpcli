@@ -11,6 +11,11 @@ Main
 * class documentation
 * use also key files
 
+Project
+-------
+
+* move this TODO to GH issues...:)
+
 Other
 -----
 
