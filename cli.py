@@ -14,7 +14,7 @@ from keepassdb import LockingDatabase
 
 class PkpCli(cmd.Cmd):
     """
-    TODO
+    
     """
     def __init__(self, db_path=None, db_key=None):
         cmd.Cmd.__init__(self)
@@ -26,7 +26,6 @@ class PkpCli(cmd.Cmd):
         self.db = None
         
         if self.db_path:
-            # TODO: key file
             self.db = self._open_db(db_path,db_key)
         keepassdb.model.RootGroup.title = '/'
         self._set_prompt()
@@ -80,7 +79,6 @@ class PkpCli(cmd.Cmd):
     def _close_db(self):
         """
         Helper function to close the DB
-        TODO: check if saved
         """
         if not self.db:
             return
@@ -151,7 +149,6 @@ class PkpCli(cmd.Cmd):
         """
         Opens a kbd file
         NOTE: encrypt memory (if possible)
-        TODO: Autocomplete should work....
         """
         self.db = self._open_db(path=line)
 
@@ -169,7 +166,6 @@ class PkpCli(cmd.Cmd):
     def do_close(self, line):
         """
         Close the current DB
-        TODO: warns if not saved 
         """
         self._close_db()
 
@@ -178,7 +174,6 @@ class PkpCli(cmd.Cmd):
         """
         List content of the current group
         Shamelessly copied from official doc
-        TODO: list not only cwd
         """
         l = self._build_struct()
         for key in l['groups']:
@@ -188,7 +183,6 @@ class PkpCli(cmd.Cmd):
 
     def complete_cd(self, text, line, begidx, endidx):
         """
-        TODO: use _build_struct() instead
         """
         return [g.title for g in self.cwd.children if
                 g.title.lower().startswith(text.lower())]
@@ -236,8 +230,7 @@ class PkpCli(cmd.Cmd):
     @db_opened
     def do_show(self, line):
         """
-        Show an entry
-        TODO: mask password
+        Shows an (incomplete) entry
         """
         if not line:
             return
@@ -258,7 +251,6 @@ class PkpCli(cmd.Cmd):
 
     def complete_showall(self, text, line, begidx, endidx):
         """
-        TODO: find a way to merge with complete_show()
         """
         return [e.title for e in self.cwd.entries if
                 e.title.lower().startswith(text.lower())]
@@ -300,7 +292,6 @@ class PkpCli(cmd.Cmd):
 
     def complete_cpu(self, text, line, begidx, endidx):
         """
-        TODO: find a way to merge with complete_show()
         """
         return [e.title for e in self.cwd.entries if
                 e.title.lower().startswith(text.lower())]            
