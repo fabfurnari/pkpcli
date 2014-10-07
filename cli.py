@@ -362,6 +362,8 @@ class PkpCli(cmd.Cmd):
         if func:
             func[0](arg)
 
+        self.do_cat = self.do_show
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description="CLI interface to KeePass DB files")
