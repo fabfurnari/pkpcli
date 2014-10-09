@@ -10,6 +10,7 @@ Main
   autocompletions)
 * class documentation
 * use also key files
+* unittest
 
 Project
 -------
