@@ -333,12 +333,77 @@ class PkpCli(cmd.Cmd):
         """
         Copy password into the clipboard
         """
+
+    def _external_edit(entry=None):
+        """
+        Manage all stuff related to temp file
+        (read/write/create/delete)
+        
+        """
+        tmpfile = tempfile.mkstemp()[1]
+        editor = os.environment.get('EDITOR') # use fallback
+
+        if entry:
+            # parse all entry data here/put into dict
+            # see if keepassdb already has db
+            pass
+        else:
+            # set an empty entry
+            entry = dict()
+            # Set all values to default
+            pass
+        
+        entry_template = '''
+        Title = {title}
+        Url = {url}
+        User = {user}
+        And so on...
+        '''
+
+        # populate with values
+        entry_template.format(title=entry['title'],
+                              url=entry['url'],
+                              # and so on
+            )
+        with open(tmpfile) as f:
+            f.write(entry_template)
+            f.close()
+
+        # edit entry with external editor
+        if subprocess.call("%s %s" % (editor, tmpfile)) == 0:
+            # parse the file and put values into dict
+            # maybe use an ini file helper library
+            pass
+        else:
+            # editor does not exited correctly
+            pass
+
+        # remove the temp file
+        os.remove(tmpfile)
+        return entry
+
+        raise NotImplementedError
+    
     def do_edit(self, line):
         """
         Edit an existing entry
+        Usage: edit ENTRYNAME
+
+        TODO: 1. Read entry values (not password)
+              2. Write entry into file (use template)
+              3. set editor and so on
+              4. open temp file with editor
+              ...user edits and saves file...
+              5. read temp file / parse fields
+              6. write entry
+              7. ask user if wants to change password
+              8. change password
+              8. save entry
+              9. delete temp file
         """
         raise NotImplementedError
 
+    @db_opened
     def do_new(self, line):
         """
         Creates new entry in the current directory
@@ -358,7 +423,6 @@ class PkpCli(cmd.Cmd):
         editor = os.environ.get('EDITOR')
         subprocess.call('{0} {1}'.format(editor, tmpfile), shell=True)
         return NotImplementedError
-        
 
     @db_opened
     def do_mkdir(self, line):
