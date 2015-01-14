@@ -1,7 +1,7 @@
 PKPCLI
 ======
 
-simple shel-like interface to keepass db.
+simple shell-like interface to keepass db.
 
 Requirements
 ------------
