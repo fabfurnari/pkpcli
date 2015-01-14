@@ -351,17 +351,26 @@ class PkpCli(cmd.Cmd):
         """
         raise NotImplementedError
 
+    def complete_rmdir(self, text, line, begidx, endidx):
+        """
+        """
+        return [g.title for g in self.cwd.children if
+                g.title.lower().startswith(text.lower())]
+
     @db_opened
-    def do_rmgroup(self, line):
+    def do_rmdir(self, line):
         """
         Delete a group
         """
         if not line:
-            print 'Usage: rmgroup GROUPNAME'
+            print 'Usage: rmgroup GROUPNAME,[GROUPNAME2,...]'
             return
 
+        group = [_g for _g in self.db.groups if _g.title == line][0]
         
-        raise NotImplementedError
+        self.db.remove_group(group=group)
+        self.need_save = True
+
         
     def do_EOF(self, line):
         """
