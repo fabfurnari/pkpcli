@@ -174,8 +174,14 @@ class PkpCli(cmd.Cmd):
         """
         Save a new (or existing) db
         """
-        if line == '': line = None
-        # horrible
+        if line == '': line = None # horrible
+        try:
+            if not self.db.groups:
+                print 'Cannot save empty group!'
+                print 'Creating the default one...'
+                self.db.create_default_group()
+        except Exception, e:
+            print "Cannot create defaut groups to db: %s" % e
         try:
             self.db.save(dbfile=line, password=self.password)
             self.need_save = None
