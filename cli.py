@@ -63,8 +63,7 @@ class PkpCli(cmd.Cmd):
             self.password = password
         except keepassdb.exc.DatabaseAlreadyLocked, e:
             print "The database is already in use or have a stale lock file"
-            print "Press Y to remove it or any other key to exit in this state"
-            a = raw_input()
+            a = raw_input("Press Y to remove it or any other key to exit in this state: ")
             if a == 'Y':
                 lock_file = "{}.lock".format(path)
                 os.remove(lock_file)
@@ -88,8 +87,8 @@ class PkpCli(cmd.Cmd):
         try:
             print "Closing db %s" % self.db.filepath
             if self.need_save:
-                print 'Database not saved, do you want to save it now? (Y/n)'
-                a = raw_input()
+                print
+                a = raw_input('Database not saved, do you want to save it now? (Y/n): ')
                 if a in ['Y','y','yes','Yes','YES','']:
                     self.do_save()
             self.db.close()
