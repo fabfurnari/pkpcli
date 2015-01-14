@@ -24,6 +24,7 @@ class PkpCli(cmd.Cmd):
         self.db_path = db_path
         self.db_key = db_key
         self.db = None
+        self.need_save = None
         
         if self.db_path:
             self.db = self._open_db(db_path,db_key)
@@ -58,6 +59,7 @@ class PkpCli(cmd.Cmd):
             password = getpass.getpass("Insert DB password: ")
         try:
             db = LockingDatabase(path, password=password)
+            self.password = password
         except keepassdb.exc.DatabaseAlreadyLocked, e:
             print "The database is already in use or have a stale lock file"
             print "Press Y to remove it or any other key to exit in this state"
@@ -84,6 +86,11 @@ class PkpCli(cmd.Cmd):
             return
         try:
             print "Closing db %s" % self.db.filepath
+            if self.need_save:
+                print 'Database not saved, do you want to save it now? (Y/n)'
+                a = raw_input()
+                if a in ['Y','y','yes','Yes','YES','']:
+                    self.do_save()
             self.db.close()
             self.cwd = None
         except Exception, e:
@@ -153,12 +160,13 @@ class PkpCli(cmd.Cmd):
         self.db = self._open_db(path=line)
 
     @db_opened
-    def do_save(self, line):
+    def do_save(self, line=None):
         """
         Save a new (or existing) db
         """
         try:
-            self.db.save()
+            self.db.save(dbfile=line, password=self.password)
+            self.need_save = None
         except Exception, e:
             print "Cannot save db: %s" % e
 
@@ -318,11 +326,18 @@ class PkpCli(cmd.Cmd):
         """
         raise NotImplementedError
 
+    @db_opened
     def do_mkdir(self, line):
         """
         Creates new group
+        Usage: mkdir GROUPNAME
         """
-        raise NotImplementedError
+        if not line:
+            # is there a way to automatically do this?
+            print 'Usage: mkdir GROUPNAME'
+            return
+        self.db.create_group(parent=self.cwd,title=line)
+        self.need_save = True
 
     def do_rm(self, line):
         """
