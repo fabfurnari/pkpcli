@@ -54,12 +54,18 @@ class PkpCli(cmd.Cmd):
             print "DB already opened!"
             print "Please close it first"
             return self.db
+        if os.path.isfile(path):
+            is_new = None
+        else:
+            print 'Creating new KeePass DB: %s' % path
+            is_new = True
+            self.need_save = True
         if key:
             raise NotImplementedError
         if not password:
             password = getpass.getpass("Insert DB password: ")
         try:
-            db = LockingDatabase(path, password=password)
+            db = LockingDatabase(path, password=password, new=is_new)
             self.password = password
         except keepassdb.exc.DatabaseAlreadyLocked, e:
             print "The database is already in use or have a stale lock file"
@@ -73,7 +79,11 @@ class PkpCli(cmd.Cmd):
         except Exception, e:
             print "Cannot open db %s: %s" % (path, e)
             sys.exit(1)
-                
+            
+        if is_new:
+            print 'Creating default groups...'
+            db.create_default_group()
+            
         print "Working with DB file %s " % path
         self.cwd = db.root
         return db
