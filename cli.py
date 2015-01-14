@@ -363,7 +363,7 @@ class PkpCli(cmd.Cmd):
         Delete a group
         """
         if not line:
-            print 'Usage: rmgroup GROUPNAME,[GROUPNAME2,...]'
+            print 'Usage: rmgroup GROUPNAME'
             return
 
         group = [_g for _g in self.db.groups if _g.title == line][0]
