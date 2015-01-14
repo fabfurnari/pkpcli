@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """
 Simple cmd interface
 """
@@ -164,6 +165,8 @@ class PkpCli(cmd.Cmd):
         """
         Save a new (or existing) db
         """
+        if line == '': line = None
+        # horrible
         try:
             self.db.save(dbfile=line, password=self.password)
             self.need_save = None
@@ -336,7 +339,10 @@ class PkpCli(cmd.Cmd):
             # is there a way to automatically do this?
             print 'Usage: mkdir GROUPNAME'
             return
-        self.db.create_group(parent=self.cwd,title=line)
+
+        p = None if self.cwd.title == '/' else self.cwd
+            
+        self.db.create_group(parent=p,title=line)
         self.need_save = True
 
     def do_rm(self, line):
@@ -345,10 +351,16 @@ class PkpCli(cmd.Cmd):
         """
         raise NotImplementedError
 
+    @db_opened
     def do_rmgroup(self, line):
         """
         Delete a group
         """
+        if not line:
+            print 'Usage: rmgroup GROUPNAME'
+            return
+
+        
         raise NotImplementedError
         
     def do_EOF(self, line):
