@@ -1,0 +1,6 @@
+argparse==1.2.1
+cmd2==0.6.7
+keepassdb==0.2.1
+pycrypto==2.6.1
+pyparsing==2.0.2
+wsgiref==0.1.2
