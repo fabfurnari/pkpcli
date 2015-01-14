@@ -361,7 +361,9 @@ class PkpCli(cmd.Cmd):
     def do_rmdir(self, line):
         """
         Delete a group
+        TODO: delete multiple groups
         """
+        
         if not line:
             print 'Usage: rmgroup GROUPNAME'
             return
