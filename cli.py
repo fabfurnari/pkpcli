@@ -9,6 +9,8 @@ import dircache
 import getpass
 import sys
 import os
+import tempfile
+import subprocess
 from functools import wraps
 import keepassdb
 from keepassdb import LockingDatabase
@@ -165,7 +167,6 @@ class PkpCli(cmd.Cmd):
     def do_open(self, line):
         """
         Opens a kbd file
-        NOTE: encrypt memory (if possible)
         """
         self.db = self._open_db(path=line)
 
@@ -340,9 +341,24 @@ class PkpCli(cmd.Cmd):
 
     def do_new(self, line):
         """
-        Creates new entry
+        Creates new entry in the current directory
+        Usage: new ENTRYNAME
+
+        TODO: 1. create temp file
+              2. write template into file
+              3. set editor, and so on
+              4. open the temp file with editor
+              ...user edits and saves file...
+              5. read temp file / parse fields
+              6. ask user for password / set password
+              7. save entry
+              8. delete temp file
         """
-        raise NotImplementedError
+        tmpfile = tempfile.mkstemp()[1]
+        editor = os.environ.get('EDITOR')
+        subprocess.call('{0} {1}'.format(editor, tmpfile), shell=True)
+        return NotImplementedError
+        
 
     @db_opened
     def do_mkdir(self, line):
