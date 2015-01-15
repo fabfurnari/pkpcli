@@ -186,6 +186,12 @@ class PkpCli(cmd.Cmd):
         return [e.title for e in self.cwd.entries if
                 e.title.lower().startswith(text.lower())]
 
+    def _complete_groups(self, text, line, begidx, endidx):
+        '''
+        Still incomplete function to serve all completion
+        '''
+        return [g.title for g in self.cwd.children if
+                g.title.lower().startswith(text.lower())]
 
     def complete_open(self, text, line, begidx, endidx):
         """
@@ -257,11 +263,11 @@ class PkpCli(cmd.Cmd):
         for key in l['entries']:
             print "{}".format(key)
 
-    def complete_cd(self, text, line, begidx, endidx):
-        """
-        """
-        return [g.title for g in self.cwd.children if
-                g.title.lower().startswith(text.lower())]
+    # def complete_cd(self, text, line, begidx, endidx):
+    #     """
+    #     """
+    #     return [g.title for g in self.cwd.children if
+    #             g.title.lower().startswith(text.lower())]
 
     @db_opened
     def do_cd(self, line):
@@ -309,12 +315,6 @@ class PkpCli(cmd.Cmd):
         self._show_entry(complete=None,entry_name=line)
         return
 
-    # def complete_showall(self, text, line, begidx, endidx):
-    #     """
-    #     """
-    #     return [e.title for e in self.cwd.entries if
-    #             e.title.lower().startswith(text.lower())]
-
     @db_opened
     def do_showall(self, line):
         """
@@ -325,11 +325,11 @@ class PkpCli(cmd.Cmd):
         self._show_entry(complete=True,entry_name=line)
         return
     
-    def complete_cpu(self, text, line, begidx, endidx):
-        """
-        """
-        return [e.title for e in self.cwd.entries if
-                e.title.lower().startswith(text.lower())]            
+    # def complete_cpu(self, text, line, begidx, endidx):
+    #     """
+    #     """
+    #     return [e.title for e in self.cwd.entries if
+    #             e.title.lower().startswith(text.lower())]            
 
     def do_cpu(self, line):
         """
@@ -454,11 +454,11 @@ class PkpCli(cmd.Cmd):
         """
         raise NotImplementedError
 
-    def complete_rmdir(self, text, line, begidx, endidx):
-        """
-        """
-        return [g.title for g in self.cwd.children if
-                g.title.lower().startswith(text.lower())]
+    # def complete_rmdir(self, text, line, begidx, endidx):
+    #     """
+    #     """
+    #     return [g.title for g in self.cwd.children if
+    #             g.title.lower().startswith(text.lower())]
 
     @db_opened
     def do_rmdir(self, line):
@@ -507,6 +507,9 @@ class PkpCli(cmd.Cmd):
     complete_cat = _complete_entries
     complete_show = _complete_entries
     complete_showall = _complete_entries
+    complete_cpu = _complete_entries
+    complete_cd = _complete_groups
+    complete_rmdir = _complete_groups
     do_cat = do_show
 
 if __name__ == '__main__':
@@ -515,10 +518,8 @@ if __name__ == '__main__':
     parser.add_argument('-d','--database',metavar='DBFILE',help='Database file')
     parser.add_argument('-k','--keyfile',metavar='KEYFILE',help='The keyfile to use')
     args = parser.parse_args()
-    print args.database
     c = PkpCli(db_path=args.database, db_key=args.keyfile)
     try:
-        print 'DEBUG'
         c.cmdloop()
     finally:
         c._close_db()
