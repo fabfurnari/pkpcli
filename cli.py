@@ -3,7 +3,7 @@
 Simple cmd interface
 """
 
-import cmd
+import cmd2
 import argparse
 import dircache
 import getpass
@@ -15,12 +15,13 @@ from functools import wraps
 import keepassdb
 from keepassdb import LockingDatabase
 
-class PkpCli(cmd.Cmd):
+class PkpCli(cmd2.Cmd):
     """
     
     """
+
     def __init__(self, db_path=None, db_key=None):
-        cmd.Cmd.__init__(self)
+        cmd2.Cmd.__init__(self)
         self.intro = 'Simple KeePass db shell'
         self.ruler = '-'
 
@@ -302,20 +303,7 @@ class PkpCli(cmd.Cmd):
         print kwargs
         return [e.title for e in self.cwd.entries if
                 e.title.lower().startswith(text.lower())]
-        
-    def complete_cat(self, text, line, begidx, endidx):
-        entries = self._complete_entries(text, line, begidx, endidx)
-        print entries
-        return entries
-    
-    @db_opened
-    def do_cat(self, line):
-        """
-        Alias for do_show
-        """
-        self.do_show(line)
-        return
-    
+            
     @db_opened
     def do_show(self, line):
         """
@@ -325,6 +313,9 @@ class PkpCli(cmd.Cmd):
             return
         self._show_entry(complete=None,entry_name=line)
         return
+
+    complete_cat = complete_show
+    do_cat = do_show
 
     def complete_showall(self, text, line, begidx, endidx):
         """
@@ -512,7 +503,7 @@ class PkpCli(cmd.Cmd):
         Override to simplify the prompt string creation
         """
         self._set_prompt()
-        return cmd.Cmd.postcmd(self, stop, line)
+        return cmd2.Cmd.postcmd(self, stop, line)
 
     def default(self, line):
         cmd, arg, line = self.parseline(line)
@@ -528,9 +519,10 @@ if __name__ == '__main__':
     parser.add_argument('-d','--database',metavar='DBFILE',help='Database file')
     parser.add_argument('-k','--keyfile',metavar='KEYFILE',help='The keyfile to use')
     args = parser.parse_args()
-
+    print args.database
     c = PkpCli(db_path=args.database, db_key=args.keyfile)
     try:
+        print 'DEBUG'
         c.cmdloop()
     finally:
         c._close_db()
