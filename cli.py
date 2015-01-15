@@ -265,6 +265,7 @@ class PkpCli(cmd.Cmd):
     def do_open(self, line):
         """
         Opens a kbd file
+        Usage: open FILENAME
         """
         self.db = self._open_db(path=line)
         return
@@ -272,7 +273,8 @@ class PkpCli(cmd.Cmd):
     @db_opened
     def do_save(self, line=None):
         """
-        Save a new (or existing) db
+        Save an existing or new db
+        Usage: save [FILENAME]
         """
         if line == '': line = None # horrible
             
@@ -296,6 +298,7 @@ class PkpCli(cmd.Cmd):
     def do_close(self, line):
         """
         Close the current DB
+        Usage: close
         """
         self._close_db()
         
@@ -305,7 +308,7 @@ class PkpCli(cmd.Cmd):
     def do_ls(self, line):
         """
         List content of the current group
-        Shamelessly copied from official doc
+        Usage: ls
         """
         l = self._current_childrens()
         
@@ -321,6 +324,7 @@ class PkpCli(cmd.Cmd):
     def do_cd(self, line):
         """
         Moves throught groups
+        Usage: cd GROUP
         """
         if not line or line == '/': 
             self.cwd = self.db.root       
@@ -343,6 +347,7 @@ class PkpCli(cmd.Cmd):
     def do_pwd(self, line):
         """
         Prints full "path"
+        Usage: pwd
         """
         prompt_list = []
         
@@ -362,6 +367,7 @@ class PkpCli(cmd.Cmd):
     def do_show(self, line):
         """
         Shows an (incomplete) entry
+        Usage: show ENTRY
         """
         if not line:
             return
@@ -374,6 +380,7 @@ class PkpCli(cmd.Cmd):
     def do_showall(self, line):
         """
         Show all entry
+        Usage: showall ENTRY
         """
         if not line:
             return
@@ -500,7 +507,7 @@ class PkpCli(cmd.Cmd):
     def do_mkdir(self, line):
         """
         Creates new group
-        Usage: mkdir GROUPNAME
+        Usage: mkdir GROUP
         """
         if not line:
             # is there a way to automatically do this?
@@ -522,7 +529,7 @@ class PkpCli(cmd.Cmd):
     def do_rmdir(self, line):
         """
         Delete a group
-        TODO: delete multiple groups
+        Usage: rmdir GROUP
         """
         
         if not line:
