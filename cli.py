@@ -1,7 +1,4 @@
 #!/usr/bin/env python
-"""
-Simple cmd interface
-"""
 
 import cmd
 import argparse
@@ -17,21 +14,30 @@ from keepassdb import LockingDatabase
 
 class PkpCli(cmd.Cmd):
     """
-    
+    Pkpcli is a simple shell-like software to keepass DB files.
+    It uses extensively the keepassdb module by Hans Lellelid
+    (https://github.com/hozn/keepassdb)
+
+    This class is a very simple wrapper for cmd.Cmd. Probably
+    in the future this should be splitted into some other helper
+    classes/modules.
     """
     def __init__(self, db_path=None, db_key=None):
         cmd.Cmd.__init__(self)
-        self.intro = 'Simple KeePass db shell'
-        self.ruler = '-'
 
         self.db_path = db_path
         self.db_key = db_key
         self.db = None
         self.need_save = None
-        
+
+        self.intro = 'Simple KeePass db shell'
+        self.ruler = '-'
+
         if self.db_path:
             self.db = self._open_db(db_path,db_key)
+            
         keepassdb.model.RootGroup.title = '/'
+        
         self._set_prompt()
 
     def db_opened(f):
