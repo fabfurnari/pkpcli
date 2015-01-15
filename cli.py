@@ -62,16 +62,20 @@ class PkpCli(cmd.Cmd):
             print "DB already opened!"
             print "Please close it first"
             return self.db
+        
         if os.path.isfile(path):
             is_new = None
         else:
             print 'Creating new KeePass DB: %s' % path
             is_new = True
             self.need_save = True
+            
         if key:
             raise NotImplementedError
+        
         if not password:
             password = getpass.getpass("Insert DB password: ")
+            
         try:
             db = LockingDatabase(path, password=password, new=is_new)
             self.password = password
@@ -86,6 +90,8 @@ class PkpCli(cmd.Cmd):
                 sys.exit(1)
         except Exception, e:
             print "Cannot open db %s: %s" % (path, e)
+            lock_file = "{}.lock".format(path)
+            os.remove(lock_file)
             sys.exit(1)
             
         if is_new:
@@ -102,18 +108,18 @@ class PkpCli(cmd.Cmd):
         """
         if not self.db:
             return
+        
         try:
             print "Closing db %s" % self.db.filepath
             if self.need_save:
-                print
-                a = raw_input('Database not saved, do you want to save it now? (Y/n): ')
+                a = raw_input("Database not saved! \nDo you want to save it now? (Y/n): ")
                 if a in ['Y','y','yes','Yes','YES','']:
                     self.do_save()
             self.db.close()
-            self.cwd = None
         except Exception, e:
             print "Cannot close db %s: %s" % (self.db.filepath, e)
         finally:
+            self.cwd = None
             self.db = None
 
     def _set_prompt(self):
@@ -141,7 +147,8 @@ class PkpCli(cmd.Cmd):
             d = dict([(g.title, g) for g in self.cwd.children])
         else:
             d['entries'] = dict([(e.title, e) for e in self.cwd.entries])
-            d['groups'] = dict([(g.title, g) for g in self.cwd.children])            
+            d['groups'] = dict([(g.title, g) for g in self.cwd.children])
+            
         return d
 
     def _show_entry(self, complete=None, entry_name=None):
@@ -149,14 +156,15 @@ class PkpCli(cmd.Cmd):
         Helper function to show an entry.
         Serves do_show() and do_showall()
         '''
-        
         l = self._current_childrens('entries')            
         if entry_name in l.keys():
             e = l[entry_name]
         else:
             print 'Nothing to show...'
             return
+        
         password = e.password if complete else '********'
+        
         print '''
  {group}/{title}
 
@@ -230,6 +238,7 @@ class PkpCli(cmd.Cmd):
         Opens a kbd file
         """
         self.db = self._open_db(path=line)
+        return
 
     @db_opened
     def do_save(self, line=None):
@@ -237,6 +246,7 @@ class PkpCli(cmd.Cmd):
         Save a new (or existing) db
         """
         if line == '': line = None # horrible
+            
         try:
             if not self.db.groups:
                 print 'Cannot save empty group!'
@@ -244,11 +254,14 @@ class PkpCli(cmd.Cmd):
                 self.db.create_default_group()
         except Exception, e:
             print "Cannot create defaut groups to db: %s" % e
+            
         try:
-            self.db.save(dbfile=line, password=self.password)
+            self.db.save(dbfile=line, password=self.db.password)
             self.need_save = None
         except Exception, e:
             print "Cannot save db: %s" % e
+            
+        return
 
     @db_opened
     def do_close(self, line):
@@ -256,6 +269,8 @@ class PkpCli(cmd.Cmd):
         Close the current DB
         """
         self._close_db()
+        
+        return
 
     @db_opened
     def do_ls(self, line):
@@ -264,16 +279,14 @@ class PkpCli(cmd.Cmd):
         Shamelessly copied from official doc
         """
         l = self._current_childrens()
+        
         for key in l['groups']:
             print "\033[1;36m{}/\033[1;m".format(key)
+            
         for key in l['entries']:
             print "{}".format(key)
 
-    # def complete_cd(self, text, line, begidx, endidx):
-    #     """
-    #     """
-    #     return [g.title for g in self.cwd.children if
-    #             g.title.lower().startswith(text.lower())]
+        return
 
     @db_opened
     def do_cd(self, line):
@@ -281,7 +294,7 @@ class PkpCli(cmd.Cmd):
         Moves throught groups
         """
         if not line or line == '/': 
-            self.cwd = self.db.root
+            self.cwd = self.db.root       
         elif line == '..':
             if self.cwd.title != '/':
                 self.cwd = self.cwd.parent
@@ -289,6 +302,7 @@ class PkpCli(cmd.Cmd):
             l = self._current_childrens('groups')
             if line in l.keys():
                 self.cwd = l[line]
+        return
     
     def do_find(self, line):
         """
@@ -302,14 +316,18 @@ class PkpCli(cmd.Cmd):
         Prints full "path"
         """
         prompt_list = []
+        
         def _pwd(group):
             prompt_list.insert(0, group)
             if group.title == '/':
                 return prompt_list
             else:
                 return _pwd(group.parent)
+            
         p = "/".join([x.title for x in _pwd(self.cwd)])
+        
         print p
+        return
                     
     @db_opened
     def do_show(self, line):
@@ -318,7 +336,9 @@ class PkpCli(cmd.Cmd):
         """
         if not line:
             return
+        
         self._show_entry(complete=None,entry_name=line)
+        
         return
 
     @db_opened
@@ -328,25 +348,39 @@ class PkpCli(cmd.Cmd):
         """
         if not line:
             return
+        
         self._show_entry(complete=True,entry_name=line)
+        
         return
     
-    # def complete_cpu(self, text, line, begidx, endidx):
-    #     """
-    #     """
-    #     return [e.title for e in self.cwd.entries if
-    #             e.title.lower().startswith(text.lower())]            
-
     def do_cpu(self, line):
         """
         Copy username into the clipboard
         """
-        raise NotImplementedError
+        try:
+            import pyperclip
+        except ImportError:
+            print 'You need to install the pyperclip module to use this!'
+            return
+
+        l = self._current_childrens('entries')
+        if line in l.keys():
+            e = l[line]
+
+        try:
+            pyperclip.copy(e.username)
+            print 'Username copied into clipboard!'
+        except Exception, e:
+            print "Cannot copy username into clipboard: %s" % e
+            return
+
+        return
     
     def do_cpp(self, line):
         """
         Copy password into the clipboard
         """
+        raise NotImplementedError
 
     def _external_edit(entry=None):
         """
