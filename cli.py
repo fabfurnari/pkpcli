@@ -69,12 +69,19 @@ class PkpCli(cmd.Cmd):
             print 'Creating new KeePass DB: %s' % path
             is_new = True
             self.need_save = True
+
+            # is there a better way?
+            p1,p2 = ('','.')
+            while p1 != p2:
+                p1 = getpass.getpass("Insert password for new DB %s: " % path)
+                p2 = getpass.getpass('Repeat password: ')
+            password = p1
             
         if key:
             raise NotImplementedError
-        
+            
         if not password:
-            password = getpass.getpass("Insert DB password: ")
+            password = getpass.getpass("Insert DB password for %s: " % path)
             
         try:
             db = LockingDatabase(path, password=password, new=is_new)
