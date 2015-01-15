@@ -207,6 +207,35 @@ class PkpCli(cmd.Cmd):
         return [g.title for g in self.cwd.children if
                 g.title.lower().startswith(text.lower())]
 
+    def _attr_copy(self, what=None, entry_name=None):
+        '''
+        Copies username/password/other into clipboard
+        '''
+        try:
+            import pyperclip
+        except ImportError:
+            print 'You need to install the pyperclip module to use this!'
+            return
+
+        l = self._current_childrens('entries')
+        if entry_name in l.keys():
+            e = l[entry_name]
+        else:
+            print 'No entry with that name!'
+            return
+
+        if not what in ['username', 'password', 'url']:
+            raise NotImplementedError
+
+        try:
+            pyperclip.copy(getattr(e, what))
+            print "%s copied into clipboard!" % what
+        except Exception, e:
+            print "Cannot copy %s into clipboard: %s" % (what, e)
+            return
+
+        return
+
     def complete_open(self, text, line, begidx, endidx):
         """
         auto complete of file name.
@@ -352,35 +381,6 @@ class PkpCli(cmd.Cmd):
         self._show_entry(complete=True,entry_name=line)
         
         return
-
-    def _attr_copy(self, what=None, entry_name=None):
-        '''
-        Copies username/password/other into clipboard
-        '''
-        try:
-            import pyperclip
-        except ImportError:
-            print 'You need to install the pyperclip module to use this!'
-            return
-
-        l = self._current_childrens('entries')
-        if entry_name in l.keys():
-            e = l[entry_name]
-        else:
-            print 'No entry with that name!'
-            return
-
-        if not what in ['username', 'password', 'url']:
-            raise NotImplementedError
-
-        try:
-            pyperclip.copy(getattr(e, what))
-            print "%s copied into clipboard!" % what
-        except Exception, e:
-            print "Cannot copy %s into clipboard: %s" % (what, e)
-            return
-
-        return
     
     def do_cpu(self, line):
         """
@@ -517,12 +517,6 @@ class PkpCli(cmd.Cmd):
         Delete an entry
         """
         raise NotImplementedError
-
-    # def complete_rmdir(self, text, line, begidx, endidx):
-    #     """
-    #     """
-    #     return [g.title for g in self.cwd.children if
-    #             g.title.lower().startswith(text.lower())]
 
     @db_opened
     def do_rmdir(self, line):
