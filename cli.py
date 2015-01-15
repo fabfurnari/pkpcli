@@ -352,11 +352,11 @@ class PkpCli(cmd.Cmd):
         self._show_entry(complete=True,entry_name=line)
         
         return
-    
-    def do_cpu(self, line):
-        """
-        Copy username into the clipboard
-        """
+
+    def _attr_copy(self, what=None, entry_name=None):
+        '''
+        Copies username/password/other into clipboard
+        '''
         try:
             import pyperclip
         except ImportError:
@@ -364,24 +364,48 @@ class PkpCli(cmd.Cmd):
             return
 
         l = self._current_childrens('entries')
-        if line in l.keys():
-            e = l[line]
+        if entry_name in l.keys():
+            e = l[entry_name]
+        else:
+            print 'No entry with that name!'
+            return
+
+        if not what in ['username', 'password', 'url']:
+            raise NotImplementedError
 
         try:
-            pyperclip.copy(e.username)
-            print 'Username copied into clipboard!'
+            pyperclip.copy(getattr(e, what))
+            print "%s copied into clipboard!" % what
         except Exception, e:
-            print "Cannot copy username into clipboard: %s" % e
+            print "Cannot copy %s into clipboard: %s" % (what, e)
             return
 
         return
     
+    def do_cpu(self, line):
+        """
+        Copy username into clipboard
+        Usage: cpu ENTRY
+        """
+        self._attr_copy(what='username',entry_name=line)
+        return
+    
     def do_cpp(self, line):
         """
-        Copy password into the clipboard
+        Copy password into clipboard
+        Usage: cpp ENTRY
         """
-        raise NotImplementedError
+        self._attr_copy(what='password',entry_name=line)
+        return
 
+    def do_cpurl(self, line):
+        """
+        Copy URL into clipboard
+        Usage: cpurl ENTRY
+        """
+        self._attr_copy(what='url',entry_name=line)
+        return
+        
     def _external_edit(entry=None):
         """
         Manage all stuff related to temp file
@@ -548,6 +572,8 @@ class PkpCli(cmd.Cmd):
     complete_show = _complete_entries
     complete_showall = _complete_entries
     complete_cpu = _complete_entries
+    complete_cpurl = _complete_entries
+    complete_cpp = _complete_entries
     complete_cd = _complete_groups
     complete_rmdir = _complete_groups
     do_cat = do_show
