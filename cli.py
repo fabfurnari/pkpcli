@@ -122,9 +122,9 @@ class PkpCli(cmd.Cmd):
             self.prompt = "{}> ".format(self.cwd.title)
         return
 
-    def _build_struct(self, what=None):
+    def _current_childrens(self, what=None):
         """
-        Builds a dict containing entries and group from
+        Returns a dict containing entries and group from
         self.cwd that can be used by all other functions 
         """
         d = dict()
@@ -137,6 +137,48 @@ class PkpCli(cmd.Cmd):
             d['entries'] = dict([(e.title, e) for e in self.cwd.entries])
             d['groups'] = dict([(g.title, g) for g in self.cwd.children])            
         return d
+
+    def _show_entry(self, complete=None, entry_name=None):
+        '''
+        Helper function to show an entry.
+        Serves do_show() and do_showall()
+        '''
+        
+        l = self._current_childrens('entries')            
+        if entry_name in l.keys():
+            e = l[entry_name]
+        else:
+            print 'Nothing to show...'
+            return
+        password = e.password if complete else '********'
+        print '''
+ {group}/{title}
+
+ URL: {url}
+ User: {username}
+ Password: {password}
+ Notes: {notes}
+ Expires on: {expires}
+ 
+ '''.format(title=e.title,
+            group=e.group.title,
+            username=e.username,
+            url=e.url,
+            password=password,
+            notes=e.notes,
+            expires=e.expires,
+            )
+        if complete:
+            print '''
+ Created: {created}
+ Modified: {modified}
+ Accessed: {accessed}
+ --------------------
+ '''.format(created=e.created,
+            modified=e.modified,
+            accessed=e.accessed)
+        return
+
 
     def complete_open(self, text, line, begidx, endidx):
         """
@@ -202,7 +244,7 @@ class PkpCli(cmd.Cmd):
         List content of the current group
         Shamelessly copied from official doc
         """
-        l = self._build_struct()
+        l = self._current_childrens()
         for key in l['groups']:
             print "\033[1;36m{}/\033[1;m".format(key)
         for key in l['entries']:
@@ -225,7 +267,7 @@ class PkpCli(cmd.Cmd):
             if self.cwd.title != '/':
                 self.cwd = self.cwd.parent
         else:
-            l = self._build_struct('groups')
+            l = self._current_childrens('groups')
             if line in l.keys():
                 self.cwd = l[line]
     
@@ -249,10 +291,30 @@ class PkpCli(cmd.Cmd):
                 return _pwd(group.parent)
         p = "/".join([x.title for x in _pwd(self.cwd)])
         print p
-
+        
     def complete_show(self, text, line, begidx, endidx):
         return [e.title for e in self.cwd.entries if
                 e.title.lower().startswith(text.lower())]
+
+    def _complete_entries(self, *args, **kwargs):
+        text = kwargs['text']
+        print args
+        print kwargs
+        return [e.title for e in self.cwd.entries if
+                e.title.lower().startswith(text.lower())]
+        
+    def complete_cat(self, text, line, begidx, endidx):
+        entries = self._complete_entries(text, line, begidx, endidx)
+        print entries
+        return entries
+    
+    @db_opened
+    def do_cat(self, line):
+        """
+        Alias for do_show
+        """
+        self.do_show(line)
+        return
     
     @db_opened
     def do_show(self, line):
@@ -261,20 +323,8 @@ class PkpCli(cmd.Cmd):
         """
         if not line:
             return
-        l = self._build_struct('entries')
-        if line in l.keys():
-            e = l[line]
-            print '''
- {group}/{title}
-
- URL: {url}
- User: {username}
- Password: *******
-            
- '''.format(title=e.title,
-            group=e.group.title,
-            username=e.username,
-            url=e.url)
+        self._show_entry(complete=None,entry_name=line)
+        return
 
     def complete_showall(self, text, line, begidx, endidx):
         """
@@ -289,34 +339,9 @@ class PkpCli(cmd.Cmd):
         """
         if not line:
             return
-        l = self._build_struct('entries')
-        if line in l.keys():
-            e = l[line]
-            print '''
- {group}/{title}
-
- URL: {url}
- User: {username}
- Password: {password}
- Notes: {notes}
- Expires on: {expires}
-
- Created: {created}
- Modified: {modified}
- Accessed: {accessed}
-            
- '''.format(title=e.title,
-            group=e.group.title,
-            username=e.username,
-            url=e.url,
-            password=e.password,
-            notes=e.notes,
-            expires=e.expires,
-            created=e.created,
-            modified=e.modified,
-            accessed=e.accessed,
-     )
-
+        self._show_entry(complete=True,entry_name=line)
+        return
+    
     def complete_cpu(self, text, line, begidx, endidx):
         """
         """
