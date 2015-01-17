@@ -420,43 +420,51 @@ class PkpCli(cmd.Cmd):
         self._attr_copy(what='url',entry_name=line)
         return
         
-    def _external_edit(entry=None):
+    def _external_edit(self, entry_name=None):
         """
         Manage all stuff related to temp file
         (read/write/create/delete)
         
         """
-        tmpfile = tempfile.mkstemp()[1]
-        editor = os.environment.get('EDITOR') # use fallback
+        editor = os.environ.get('EDITOR') # use fallback
 
-        if entry:
-            # parse all entry data here/put into dict
-            # see if keepassdb already has db
-            pass
+        l = self._current_childrens('entries')
+        if entry_name in l.keys():
+            entry = l[entry_name]
         else:
             # set an empty entry
-            entry = dict()
-            # Set all values to default
-            pass
-        
-        entry_template = '''
+            print 'Creating new entry!'
+            entry = self.db.create_entry(
+                group=self.cwd,
+                title=entry_name,
+                url='Insert url',
+                username='Insert username',
+                notes='Insert notes',
+                )
+
+        template = '''
         Title = {title}
         Url = {url}
         User = {user}
-        And so on...
+        Note = {notes}
         '''
 
         # populate with values
-        entry_template.format(title=entry['title'],
-                              url=entry['url'],
-                              # and so on
+        entry_template = template.format(title=entry.title,
+                              url=entry.url,
+                              user=entry.username,
+                              notes=entry.notes
             )
-        with open(tmpfile) as f:
-            f.write(entry_template)
-            f.close()
+        print '[DEBUG] %s' % entry_template
+        tmp = tempfile.TemporaryFile()
+        try:
+            tmp.write(entry_template)
+        except Exception, e:
+            print 'Error while writing tempfile: %s' % e
+            tmp.close()
 
         # edit entry with external editor
-        if subprocess.call("%s %s" % (editor, tmpfile)) == 0:
+        if subprocess.call("%s %s" % (editor, tmp)) == 0:
             # parse the file and put values into dict
             # maybe use an ini file helper library
             pass
@@ -505,11 +513,10 @@ class PkpCli(cmd.Cmd):
               7. save entry
               8. delete temp file
         """
-        tmpfile = tempfile.mkstemp()[1]
-        editor = os.environ.get('EDITOR')
-        subprocess.call('{0} {1}'.format(editor, tmpfile), shell=True)
-        return NotImplementedError
-
+        print 'do_new'
+        self._external_edit(entry_name=line)
+        return
+        
     @db_opened
     def do_mkdir(self, line):
         """
@@ -595,5 +602,7 @@ if __name__ == '__main__':
     c = PkpCli(db_path=args.database, db_key=args.keyfile)
     try:
         c.cmdloop()
+    except Exception, e:
+        print 'Unexpected error!: %s' % e
     finally:
         c._close_db()
