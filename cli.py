@@ -498,6 +498,10 @@ Note = {notes}
         Helper function to set password to entries
         Return boolean
         '''
+        a = raw_input('Do you want to generate random password? (Y/n) ')
+        if a in ['Y','yes','YES','y','']:
+            entry.password = self._generate_password()
+            return True
         p1 = getpass.getpass('Insert password for %s: ' % entry.title)
         p2 = getpass.getpass('Repeat password: ')
         if p1 == p2:
@@ -573,6 +577,44 @@ Note = {notes}
         self.db.create_group(parent=p,title=line)
         self.need_save = True
 
+    def _generate_password(self, params):
+        '''
+        Code stolen!
+        Simply return random password of given len
+        '''
+        import getopt
+        import random
+
+        pw_len = 8
+        special_chars = None
+                
+        args = params.split()
+        o, a = getopt.getopt(args, 'l:s')
+        opts = dict()
+        for k,v in o:
+            opts[k] = v
+        if opts.has_key('-l'):
+            pw_len = int(opts['-l'])
+        if opts.has_key('-s'):
+            special_chars = True
+
+        alphabet = "abcdefghijklmnopqrstuvwxyz"
+        special_c = '!@#$%^&*()'
+        upperalphabet = alphabet.upper()
+        pwlist = []
+
+        for i in range(pw_len//3):
+            pwlist.append(alphabet[random.randrange(len(alphabet))])
+            pwlist.append(upperalphabet[random.randrange(len(upperalphabet))])
+            if special_chars:
+                pwlist.append(special_c[random.randrange(len(special_c))])
+            pwlist.append(str(random.randrange(10)))
+        for i in range(pw_len-len(pwlist)):
+            pwlist.append(alphabet[random.randrange(len(alphabet))])
+        random.shuffle(pwlist)
+        pwstring = "".join(pwlist)
+        return pwstring
+        
     @db_opened
     def do_passwd(self, line):
         '''
@@ -581,7 +623,7 @@ Note = {notes}
         '''
         l = self._current_childrens('entries')
         if line in l.keys():
-            _entry = l[line]
+            _entry = l[line]            
             if self._set_password(entry=_entry):
                 print 'Password set successfully'
                 self.do_save()
