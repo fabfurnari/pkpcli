@@ -10,12 +10,15 @@ import tempfile
 import subprocess
 from functools import wraps
 import keepassdb
+import getopt
+import logging
 from keepassdb import LockingDatabase
 try:
     import ConfigParser
 except ImportError:
     from configparser import ConfigParser
 
+logging.basicConfig()
 
 class PkpCli(cmd.Cmd):
     """
@@ -100,6 +103,9 @@ class PkpCli(cmd.Cmd):
                 print "Lock %s removed" % lock_file
                 print "Please re-launch this program"
                 sys.exit(1)
+        except keepassdb.exc.AuthenticationError, e:
+            print 'Hash sum mismatch: maybe wrong key/password?'
+            return
         except Exception, e:
             print "Cannot open db %s: %s" % (path, e)
             lock_file = "{}.lock".format(path)
@@ -493,26 +499,16 @@ Note = {notes}
         return entry
 
     @db_opened
-    def _set_password(self, entry):
+    def _set_password(self, entry, password):
         '''
         Helper function to set password to entries
         Return boolean
         '''
-        a = raw_input('Do you want to generate random password? (Y/n) ')
-        if a in ['Y','yes','YES','y','']:
-            entry.password = self._generate_password()
+        try:
+            entry.password = password
             return True
-        p1 = getpass.getpass('Insert password for %s: ' % entry.title)
-        p2 = getpass.getpass('Repeat password: ')
-        if p1 == p2:
-            try:
-                entry.password = p1
-                return True
-            except Exception, e:
-                print 'Cannot set password for %s: %s' % (entry.title, e)
-                return False
-        else:
-            print 'Password mismatch!'
+        except Exception, e:
+            print 'Cannot set password for %s: %s' % (entry.title, e)
             return False
     
     @db_opened
@@ -539,8 +535,8 @@ Note = {notes}
             except Exception, e:
                  print 'Cannot create entry: %s' % e
             _entry = self._external_edit(entry=_entry)
-            if self._set_password(_entry):
-                print 'Entry %s created' % _entry.title
+            print 'Entry %s created' % _entry.title
+            print 'To set password use \'passwd %s\'' % _entry.title
             self.need_save = True
             return
 
@@ -577,26 +573,12 @@ Note = {notes}
         self.db.create_group(parent=p,title=line)
         self.need_save = True
 
-    def _generate_password(self, params):
+    def _generate_password(self, pw_len=8, special_chars=None):
         '''
         Code stolen!
         Simply return random password of given len
         '''
-        import getopt
         import random
-
-        pw_len = 8
-        special_chars = None
-        
-        args = params.split()
-        o, a = getopt.getopt(args, 'l:s')
-        opts = dict()
-        for k,v in o:
-            opts[k] = v
-        if opts.has_key('-l'):
-            pw_len = int(opts['-l'])
-        if opts.has_key('-s'):
-            special_chars = True
 
         alphabet = "abcdefghijklmnopqrstuvwxyz"
         special_c = '!@#$%^&*()'
@@ -627,29 +609,45 @@ Note = {notes}
         o,a = getopt.getopt(line.split(), 'l:s')
         
         opts = dict()
+
+        pw_len = 8
+        special_chars = False
+        generate = False
+        
         for k,v in o:
             opts[k] = v
         if opts.has_key('-l'):
             pw_len = int(opts['-l'])
             generate = True
-        elif opts.has_key('-s'):
+            print '[INFO] Generating password of %s chars' % pw_len
+        if opts.has_key('-s'):
             special_chars = True
             generate = True
-        else:
-            pass
-            
-            
+            print '[INFO] Using special chars'
+
         l = self._current_childrens('entries')
-        if line in l.keys():
-            _entry = l[line]            
-            if self._set_password(entry=_entry):
-                print 'Password set successfully'
-                self.do_save()
-            else:
-                print 'Error setting password'
+        if a[0] in l.keys():
+            _entry = l[a[0]]
         else:
-            print 'Cannot find entry %s' % line
-        return
+            print 'Cannot find entry %s ' % a[0]
+            return
+
+        if generate:
+            password = self._generate_password(pw_len=pw_len, special_chars=special_chars)
+        else:
+            p1 = getpass.getpass('Insert password for %s: ' % line)
+            p2 = getpass.getpass('Repeat password: ')
+            if p1 != p2:
+                print 'Password mismatch!'
+                return
+            else:
+                password = p1
+            
+        if self._set_password(entry=_entry, password=password):
+            print 'Password set successfully'
+            self.do_save()
+        else:
+            print 'Error setting password'
     
     @db_opened
     def do_rm(self, line):
