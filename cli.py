@@ -11,6 +11,11 @@ import subprocess
 from functools import wraps
 import keepassdb
 from keepassdb import LockingDatabase
+try:
+    import ConfigParser
+except ImportError:
+    from configparser import ConfigParser
+
 
 class PkpCli(cmd.Cmd):
     """
@@ -69,12 +74,19 @@ class PkpCli(cmd.Cmd):
             print 'Creating new KeePass DB: %s' % path
             is_new = True
             self.need_save = True
+
+            # is there a better way?
+            p1,p2 = ('','.')
+            while p1 != p2:
+                p1 = getpass.getpass("Insert password for new DB %s: " % path)
+                p2 = getpass.getpass('Repeat password: ')
+            password = p1
             
         if key:
             raise NotImplementedError
-        
+            
         if not password:
-            password = getpass.getpass("Insert DB password: ")
+            password = getpass.getpass("Insert DB password for %s: " % path)
             
         try:
             db = LockingDatabase(path, password=password, new=is_new)
@@ -162,7 +174,8 @@ class PkpCli(cmd.Cmd):
         else:
             print 'Nothing to show...'
             return
-        
+
+        print '[DEBUG] %s' % e
         password = e.password if complete else '********'
         
         print '''
@@ -414,57 +427,77 @@ class PkpCli(cmd.Cmd):
         self._attr_copy(what='url',entry_name=line)
         return
         
-    def _external_edit(self, entry=None):
+    def _external_edit(self, entry_name=None):
         """
         Manage all stuff related to temp file
         (read/write/create/delete)
         
         """
-        tmpfile = tempfile.NamedTemporaryFile('w+b', delete=None)
+        tmpfile = tempfile.NamedTemporaryFile('w+b', delete=False)
         editor = os.environ.get('EDITOR') # use fallback
 
-        if entry:
-            # parse all entry data here/put into dict
-            # see if keepassdb already has db
-            pass
+        l = self._current_childrens('entries')
+        if entry_name in l.keys():
+            e = l[entry_name]
         else:
             # set an empty entry
-            entry = dict()
-            # Set all values to default
-            pass
-        
-        entry_template = '''
-        Title = {title}
-        Url = {url}
-        User = {user}
-        And so on...
-        '''
+            print 'Creating new entry!'
+            e = self.db.create_entry(
+                group=self.cwd,
+                title=entry_name,
+                url='Insert url',
+                username='Insert username',
+                notes='Insert notes',
+                )
+
+        template ='''
+[entry]
+Title = {title}
+Url = {url}
+User = {user}
+Note = {notes}
+'''
 
         # populate with values
-        entry_template.format(title=entry['title'],
-                              url=entry['url'],
-                              # and so on
+        entry_template = template.format(title=e.title,
+                              url=e.url,
+                              user=e.username,
+                              notes=e.notes
             )
-        print 'DEBUG' + entry_template
-        tmpfile.writelines(entry_template)
-        tmpfile.seek(0)
-        tmpfile.close()
         
+        print 'DEBUG' + entry_template
+        
+        try:
+            tmpfile.writelines(entry_template)
+            tmpfile.seek(0)
+        except Exception, e:
+            print 'Cannot write to %s: %s' % (tmpfile.name, e)
+        finally:
+            tmpfile.close()
+
+        print os.path.exists(tmpfile.name)
 
         # edit entry with external editor
-        if subprocess.call("%s %s" % (editor, tmpfile)) == 0:
-            # parse the file and put values into dict
-            # maybe use an ini file helper library
-            pass
+        if subprocess.call("%s %s" % (editor, tmpfile.name), shell=True) == 0:
+            c = ConfigParser.SafeConfigParser()
+            c.read(tmpfile.name)
+            e.title = c.get('entry', 'Title')
+            e.url = c.get('entry', 'Url')
+            e.username = c.get('entry', 'User')
+            e.notes = c.get('entry', 'Note')
+            print 'Entry saved!'
         else:
             # editor does not exited correctly
-            pass
+            print 'Editor did not exited correctly!'
 
         # remove the temp file
-        os.remove(tmpfile)
-        return entry
-
-        raise NotImplementedError
+        try:
+            print '[DEBUG] Removing temp file'
+            os.remove(tmpfile.name)
+        except Exception, e:
+            print 'Cannot remove file %s: %s' % (tmpfile.name, e)
+            
+        return
 
     @db_opened
     def do_new(self, line):
@@ -472,32 +505,17 @@ class PkpCli(cmd.Cmd):
         Creates new entry in the current directory
         Usage: new ENTRYNAME
         """
-        print type(line)
-        self._external_edit(entry=line)
-        return NotImplementedError
-
+        self._external_edit(entry_name=line)
 
     @db_opened
     def do_edit(self, line):
         """
         Edit an existing entry
         Usage: edit ENTRYNAME
-
-        TODO: 1. Read entry values (not password)
-              2. Write entry into file (use template)
-              3. set editor and so on
-              4. open temp file with editor
-              ...user edits and saves file...
-              5. read temp file / parse fields
-              6. write entry
-              7. ask user if wants to change password
-              8. change password
-              8. save entry
-              9. delete temp file
         """
-        self._external_edit(entry=line)
+        self._external_edit(entry_name=line)
         raise NotImplementedError
-
+        
     @db_opened
     def do_mkdir(self, line):
         """
@@ -583,5 +601,7 @@ if __name__ == '__main__':
     c = PkpCli(db_path=args.database, db_key=args.keyfile)
     try:
         c.cmdloop()
+    except Exception, e:
+        print 'Unexpected error!: %s' % e
     finally:
         c._close_db()
