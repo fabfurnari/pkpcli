@@ -264,7 +264,7 @@ class PkpCli(cmd.Cmd):
 
     def do_open(self, line):
         """
-        Opens a kbd file
+        Opens a kdb file
         Usage: open FILENAME
         """
         self.db = self._open_db(path=line)
