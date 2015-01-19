@@ -503,7 +503,6 @@ Note = {notes}
         if p1 == p2:
             try:
                 entry.password = p1
-                print 'Password set successfully'
                 return True
             except Exception, e:
                 print 'Cannot set password for %s: %s' % (entry.title, e)
@@ -574,6 +573,25 @@ Note = {notes}
         self.db.create_group(parent=p,title=line)
         self.need_save = True
 
+    @db_opened
+    def do_passwd(self, line):
+        '''
+        Sets password to entries
+        Usage: passwd ENTRY
+        '''
+        l = self._current_childrens('entries')
+        if line in l.keys():
+            _entry = l[line]
+            if self._set_password(entry=_entry):
+                print 'Password set successfully'
+                self.do_save()
+            else:
+                print 'Error setting password'
+        else:
+            print 'Cannot find entry %s' % line
+        return
+    
+    @db_opened
     def do_rm(self, line):
         """
         Delete an entry
@@ -632,6 +650,7 @@ Note = {notes}
     complete_cpurl = _complete_entries
     complete_cpp = _complete_entries
     complete_edit = _complete_entries
+    complete_passwd = _complete_entries
     complete_cd = _complete_groups
     complete_rmdir = _complete_groups
     do_cat = do_show
