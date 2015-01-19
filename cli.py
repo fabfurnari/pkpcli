@@ -174,8 +174,7 @@ class PkpCli(cmd.Cmd):
         else:
             print 'Nothing to show...'
             return
-
-        print '[DEBUG] %s' % e
+        
         password = e.password if complete else '********'
         
         print '''
@@ -427,7 +426,7 @@ class PkpCli(cmd.Cmd):
         self._attr_copy(what='url',entry_name=line)
         return
         
-    def _external_edit(self, entry_name=None):
+    def _external_edit(self, entry=None):
         """
         Manage all stuff related to temp file
         (read/write/create/delete)
@@ -436,19 +435,13 @@ class PkpCli(cmd.Cmd):
         tmpfile = tempfile.NamedTemporaryFile('w+b', delete=False)
         editor = os.environ.get('EDITOR') # use fallback
 
-        l = self._current_childrens('entries')
-        if entry_name in l.keys():
-            e = l[entry_name]
-        else:
-            # set an empty entry
-            print 'Creating new entry!'
-            e = self.db.create_entry(
-                group=self.cwd,
-                title=entry_name,
-                url='Insert url',
-                username='Insert username',
-                notes='Insert notes',
-                )
+        # l = self._current_childrens('entries')
+        # if entry_name in l.keys():
+        #     e = l[entry_name]
+        # else:
+        #     # set an empty entry
+        #     print 'Creating new entry!'
+            
 
         template ='''
 [entry]
@@ -459,17 +452,15 @@ Note = {notes}
 '''
 
         # populate with values
-        entry_template = template.format(title=e.title,
-                              url=e.url,
-                              user=e.username,
-                              notes=e.notes
+        entry_template = template.format(title=entry.title,
+                              url=entry.url,
+                              user=entry.username,
+                              notes=entry.notes
             )
-        
-        print 'DEBUG' + entry_template
         
         try:
             tmpfile.writelines(entry_template)
-            tmpfile.seek(0)
+#            tmpfile.seek(0)
         except Exception, e:
             print 'Cannot write to %s: %s' % (tmpfile.name, e)
         finally:
@@ -478,34 +469,77 @@ Note = {notes}
         print os.path.exists(tmpfile.name)
 
         # edit entry with external editor
-        if subprocess.call("%s %s" % (editor, tmpfile.name), shell=True) == 0:
-            c = ConfigParser.SafeConfigParser()
-            c.read(tmpfile.name)
-            e.title = c.get('entry', 'Title')
-            e.url = c.get('entry', 'Url')
-            e.username = c.get('entry', 'User')
-            e.notes = c.get('entry', 'Note')
-            print 'Entry saved!'
-        else:
-            # editor does not exited correctly
+        if not subprocess.call("%s %s" % (editor, tmpfile.name), shell=True) == 0:
             print 'Editor did not exited correctly!'
+            return
+
+        c = ConfigParser.SafeConfigParser()
+        c.read(tmpfile.name)
+            
+        entry.title = c.get('entry', 'Title')
+        entry.group = self.cwd
+        entry.url = c.get('entry', 'Url')
+        entry.username = c.get('entry', 'User')
+        entry.notes = c.get('entry', 'Note')
+                
+        print 'Entry saved!'
 
         # remove the temp file
         try:
-            print '[DEBUG] Removing temp file'
             os.remove(tmpfile.name)
         except Exception, e:
             print 'Cannot remove file %s: %s' % (tmpfile.name, e)
             
-        return
+        return entry
 
+    @db_opened
+    def _set_password(self, entry):
+        '''
+        Helper function to set password to entries
+        Return boolean
+        '''
+        p1 = getpass.getpass('Insert password for %s: ' % entry.title)
+        p2 = getpass.getpass('Repeat password: ')
+        if p1 == p2:
+            try:
+                entry.password = p1
+                print 'Password set successfully'
+                return True
+            except Exception, e:
+                print 'Cannot set password for %s: %s' % (entry.title, e)
+                return False
+        else:
+            print 'Password mismatch!'
+            return False
+    
     @db_opened
     def do_new(self, line):
         """
         Creates new entry in the current directory
         Usage: new ENTRYNAME
         """
-        self._external_edit(entry_name=line)
+        
+        l = self._current_childrens('entries')
+        if line in l.keys():
+            print 'Cannot create %s: already existing' % line
+            print 'Try using \'edit\' instead...'
+            return
+        else:
+            try:
+                _entry = self.db.create_entry(
+                    group=self.cwd,
+                    title=line,
+                    url='Insert url',
+                    username='Insert username',
+                    notes='Insert notes',
+                    )
+            except Exception, e:
+                 print 'Cannot create entry: %s' % e
+            _entry = self._external_edit(entry=_entry)
+            if self._set_password(_entry):
+                print 'Entry %s created' % _entry.title
+            self.need_save = True
+            return
 
     @db_opened
     def do_edit(self, line):
@@ -552,6 +586,7 @@ Note = {notes}
         group = [_g for _g in self.db.groups if _g.title == line][0]
         
         self.db.remove_group(group=group)
+        # remove child entries too!
         self.need_save = True
 
         
