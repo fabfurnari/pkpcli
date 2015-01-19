@@ -547,8 +547,16 @@ Note = {notes}
         Edit an existing entry
         Usage: edit ENTRYNAME
         """
-        self._external_edit(entry_name=line)
-        raise NotImplementedError
+        l = self._current_childrens('entries')
+        if line in l.keys():
+            _entry = l[line]
+            self._external_edit(entry=_entry)
+            self.need_save = True
+            print '[INFO] to change an entry\'s password use \'passwd\''
+        else:
+            print 'Entry does not exists, creating new one...'
+            self.do_new(line)
+        return
         
     @db_opened
     def do_mkdir(self, line):
@@ -623,6 +631,7 @@ Note = {notes}
     complete_cpu = _complete_entries
     complete_cpurl = _complete_entries
     complete_cpp = _complete_entries
+    complete_edit = _complete_entries
     complete_cd = _complete_groups
     complete_rmdir = _complete_groups
     do_cat = do_show
