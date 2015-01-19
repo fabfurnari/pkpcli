@@ -414,14 +414,14 @@ class PkpCli(cmd.Cmd):
         self._attr_copy(what='url',entry_name=line)
         return
         
-    def _external_edit(entry=None):
+    def _external_edit(self, entry=None):
         """
         Manage all stuff related to temp file
         (read/write/create/delete)
         
         """
-        tmpfile = tempfile.mkstemp()[1]
-        editor = os.environment.get('EDITOR') # use fallback
+        tmpfile = tempfile.NamedTemporaryFile('w+b', delete=None)
+        editor = os.environ.get('EDITOR') # use fallback
 
         if entry:
             # parse all entry data here/put into dict
@@ -445,9 +445,11 @@ class PkpCli(cmd.Cmd):
                               url=entry['url'],
                               # and so on
             )
-        with open(tmpfile) as f:
-            f.write(entry_template)
-            f.close()
+        print 'DEBUG' + entry_template
+        tmpfile.writelines(entry_template)
+        tmpfile.seek(0)
+        tmpfile.close()
+        
 
         # edit entry with external editor
         if subprocess.call("%s %s" % (editor, tmpfile)) == 0:
@@ -463,7 +465,19 @@ class PkpCli(cmd.Cmd):
         return entry
 
         raise NotImplementedError
-    
+
+    @db_opened
+    def do_new(self, line):
+        """
+        Creates new entry in the current directory
+        Usage: new ENTRYNAME
+        """
+        print type(line)
+        self._external_edit(entry=line)
+        return NotImplementedError
+
+
+    @db_opened
     def do_edit(self, line):
         """
         Edit an existing entry
@@ -481,28 +495,8 @@ class PkpCli(cmd.Cmd):
               8. save entry
               9. delete temp file
         """
+        self._external_edit(entry=line)
         raise NotImplementedError
-
-    @db_opened
-    def do_new(self, line):
-        """
-        Creates new entry in the current directory
-        Usage: new ENTRYNAME
-
-        TODO: 1. create temp file
-              2. write template into file
-              3. set editor, and so on
-              4. open the temp file with editor
-              ...user edits and saves file...
-              5. read temp file / parse fields
-              6. ask user for password / set password
-              7. save entry
-              8. delete temp file
-        """
-        tmpfile = tempfile.mkstemp()[1]
-        editor = os.environ.get('EDITOR')
-        subprocess.call('{0} {1}'.format(editor, tmpfile), shell=True)
-        return NotImplementedError
 
     @db_opened
     def do_mkdir(self, line):
