@@ -587,7 +587,7 @@ Note = {notes}
 
         pw_len = 8
         special_chars = None
-                
+        
         args = params.split()
         o, a = getopt.getopt(args, 'l:s')
         opts = dict()
@@ -619,8 +619,26 @@ Note = {notes}
     def do_passwd(self, line):
         '''
         Sets password to entries
-        Usage: passwd ENTRY
+        Usage: passwd [-lNUM] [-s] ENTRY
+            OPTIONS:
+                -lNUM password lenght (NUM)
+                -s    use special characters (default No)
         '''
+        o,a = getopt.getopt(line.split(), 'l:s')
+        
+        opts = dict()
+        for k,v in o:
+            opts[k] = v
+        if opts.has_key('-l'):
+            pw_len = int(opts['-l'])
+            generate = True
+        elif opts.has_key('-s'):
+            special_chars = True
+            generate = True
+        else:
+            pass
+            
+            
         l = self._current_childrens('entries')
         if line in l.keys():
             _entry = l[line]            
