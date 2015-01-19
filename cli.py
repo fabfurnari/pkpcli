@@ -362,12 +362,13 @@ class PkpCli(cmd.Cmd):
         
         print p
         return
-                    
+ 
     @db_opened
     def do_show(self, line):
         """
         Shows an (incomplete) entry
         Usage: show ENTRY
+        Alias: cat
         """
         if not line:
             return
