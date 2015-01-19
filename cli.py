@@ -499,19 +499,6 @@ Note = {notes}
         return entry
 
     @db_opened
-    def _set_password(self, entry, password):
-        '''
-        Helper function to set password to entries
-        Return boolean
-        '''
-        try:
-            entry.password = password
-            return True
-        except Exception, e:
-            print 'Cannot set password for %s: %s' % (entry.title, e)
-            return False
-    
-    @db_opened
     def do_new(self, line):
         """
         Creates new entry in the current directory
@@ -642,12 +629,14 @@ Note = {notes}
                 return
             else:
                 password = p1
-            
-        if self._set_password(entry=_entry, password=password):
+
+        try:
+            _entry.password = password
             print 'Password set successfully'
             self.do_save()
-        else:
-            print 'Error setting password'
+        except Exception, e:
+            'Cannot set password for %s: %s' % (_entry.title, e)
+            return
     
     @db_opened
     def do_rm(self, line):
