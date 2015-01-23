@@ -1,7 +1,7 @@
 PKPCLI
 ======
 
-simple shell-like interface to keepass db.
+Python KeePass Command Line Interface
 
 Requirements
 ------------
@@ -12,8 +12,7 @@ Usage
 -----
 
 Simply run `cli.py` (to be renamed) with --help
-Once the shell has started, use the `help` command to have a list of available
-commands.
+Once the shell has started, use the `help` command to have a list of available commands.
 
 Limitations
 -----------
