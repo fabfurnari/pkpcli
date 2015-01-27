@@ -294,7 +294,7 @@ class PkpCli(cmd.Cmd):
         if filename == '':
             return ls
         else:
-            return [f for f in ls if f.startswith(filename)]
+            return filter(lambda x: x.startswith(filename), ls)
 
     def do_open(self, line):
         """
