@@ -696,16 +696,24 @@ Note = {notes}
             print 'Usage: rmgroup GROUPNAME'
             return
 
-        m = "Do you want to remove %s and all it's entries now (y/N)? " % line
+        g = self._current_childrens('groups')
+        if not line in g.keys():
+            print 'Group \'%s\' not found!' % line
+            return
+        _group = g[line]
+        m = "Do you want to remove \'%s\' and all it's entries now (y/N)? " % line
         if self._confirm(message=m,default=False):            
-            group = [_g for _g in self.db.groups if _g.title == line][0]
-        
-            self.db.remove_group(group=group)
-            # remove child entries too!
-            self.need_save = True
-        return
+            try:
+                self.db.remove_group(group=_group)
+                print 'Group \'%s\' removed!' % line
+                self.need_save = True
+            except Exception, e:
+                print 'Cannot remove group %s: %s' % (line, e)
+            finally:
+                return
+        else:
+            return
 
-        
     def do_EOF(self, line):
         """
         Exits
