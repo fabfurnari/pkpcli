@@ -96,13 +96,16 @@ class PkpCli(cmd.Cmd):
             self.password = password
         except keepassdb.exc.DatabaseAlreadyLocked, e:
             print "The database is already in use or have a stale lock file"
-            a = raw_input("Press Y to remove it or any other key to exit in this state: ")
-            if a == 'Y':
+            if self._confirm(message='Do you want to remove it (y/N)? ',
+                             default=False):
                 lock_file = "{}.lock".format(path)
                 os.remove(lock_file)
                 print "Lock %s removed" % lock_file
                 print "Please re-launch this program"
                 sys.exit(1)
+            else:
+                print 'Exiting...'
+                sys.exit(0)
         except keepassdb.exc.AuthenticationError, e:
             print 'Hash sum mismatch: maybe wrong key/password?'
             return
@@ -130,8 +133,7 @@ class PkpCli(cmd.Cmd):
         try:
             print "Closing db %s" % self.db.filepath
             if self.need_save:
-                a = raw_input("Database not saved! \nDo you want to save it now? (Y/n): ")
-                if a in ['Y','y','yes','Yes','YES','']:
+                if self._confirm(message="Database not saved! \nDo you want to save it now? (Y/n): ",default=True):
                     self.do_save()
             self.db.close()
         except Exception, e:
@@ -210,6 +212,20 @@ class PkpCli(cmd.Cmd):
             modified=e.modified,
             accessed=e.accessed)
         return
+
+    def _confirm(self, message=None, default=False):
+        '''
+        Simple way to confirm question.
+        Returns boolean
+        '''
+        a = raw_input(message)
+        if a == '':
+            return default
+        if a in ['Y','y','yes','YES','Yes']:
+            return True
+        else:
+            return False
+        
 
     def _complete_entries(self, text, line, begidx, endidx):
         '''
@@ -656,11 +672,14 @@ Note = {notes}
             print 'Usage: rmgroup GROUPNAME'
             return
 
-        group = [_g for _g in self.db.groups if _g.title == line][0]
+        m = "Do you want to remove %s and all it's entries now (y/N)? " % line
+        if self._confirm(message=m,default=False):            
+            group = [_g for _g in self.db.groups if _g.title == line][0]
         
-        self.db.remove_group(group=group)
-        # remove child entries too!
-        self.need_save = True
+            self.db.remove_group(group=group)
+            # remove child entries too!
+            self.need_save = True
+        return
 
         
     def do_EOF(self, line):
