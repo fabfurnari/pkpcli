@@ -661,8 +661,29 @@ Note = {notes}
     def do_rm(self, line):
         """
         Delete an entry
+        Usage: rm ENTRY
         """
-        raise NotImplementedError
+        if not line:
+            print 'Usage: rm ENTRY'
+            return
+
+        e = self._current_childrens('entries')
+        if not line in e.keys():
+            print 'Entry %s not found!' % line
+            return
+        _entry = e[line]
+        m = 'Do you want to remove \'%s\' (y/N)? ' % line
+        if self._confirm(message=m, default=False):
+            try:
+                self.db.remove_entry(entry=_entry)
+                print 'Entry \'%s\' removed' % line
+                self.need_save = True
+            except Exception, e:
+                print 'Cannot remove entry %s: %s' % (line, e)
+            finally:
+                return
+        else:
+            return
 
     @db_opened
     def do_rmdir(self, line):
@@ -720,6 +741,7 @@ Note = {notes}
     complete_cpp = _complete_entries
     complete_edit = _complete_entries
     complete_passwd = _complete_entries
+    complete_rm = _complete_entries
     complete_cd = _complete_groups
     complete_rmdir = _complete_groups
     do_cat = do_show
