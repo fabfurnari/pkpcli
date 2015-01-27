@@ -527,6 +527,9 @@ Note = {notes}
             print 'Try using \'edit\' instead...'
             return
         else:
+            if self.cwd.title == '/':
+                print 'Cannot create entry into the root group!'
+                return
             try:
                 _entry = self.db.create_entry(
                     group=self.cwd,
