@@ -161,13 +161,16 @@ class PkpCli(cmd.Cmd):
         """
         d = dict()
         # orrible
+        # convert into generators
+        d_entries = {e.title: e for e in self.cwd.entries}
+        d_groups = {g.title: g for g in self.cwd.children}
         if what == 'entries':
-            d = dict([(e.title, e) for e in self.cwd.entries])
+            return d_entries
         elif what == 'groups':
-            d = dict([(g.title, g) for g in self.cwd.children])
+            return d_groups
         else:
-            d['entries'] = dict([(e.title, e) for e in self.cwd.entries])
-            d['groups'] = dict([(g.title, g) for g in self.cwd.children])
+            d['entries'] = d_entries
+            d['groups'] = d_groups
             
         return d
 
